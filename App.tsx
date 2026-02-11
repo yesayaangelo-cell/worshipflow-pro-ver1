@@ -374,7 +374,7 @@ export default function App() {
       <aside className={`fixed inset-y-0 left-0 z-[60] flex flex-col transition-all duration-300 bg-[#1A1A1A] border-r border-[#262626] ${isSidebarOpen ? 'w-72 translate-x-0' : 'w-0 -translate-x-full xl:w-20 xl:translate-x-0 overflow-hidden'}`}>
         <div className={`px-6 py-8 flex items-center gap-3 ${!isSidebarOpen && 'justify-center'}`}>
           <WorshipFlowLogo size="sm" collapsed={!isSidebarOpen} />
-          {isSidebarOpen && <div className="overflow-hidden"><h1 className="font-black text-sm text-white uppercase truncate">{profile.churchName}</h1><p className="text-[8px] text-[#C0FF00] font-black uppercase">TECH PARTNER</p></div>}
+          {isSidebarOpen && <div className="overflow-hidden"><h1 className="font-black text-sm text-white uppercase truncate">{profile.churchName}</h1><p className="text-[8px] text-[#C0FF00] font-black uppercase">WORSHIP FLOW</p></div>}
         </div>
         <nav className="flex-1 mt-6 px-4 space-y-2">
           {[ { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' }, { id: 'schedule', icon: Calendar, label: 'Schedules' }, { id: 'team', icon: Users, label: 'Worship Team' } ].map((m: any) => (
@@ -476,7 +476,6 @@ export default function App() {
                               <h4 className="text-xl font-black text-white uppercase tracking-tight mb-2 truncate group-hover:text-[#C0FF00] transition-colors">{ev.name}</h4>
                               <div className="flex gap-2">
                                 <span className="text-[9px] font-black text-[#888888] bg-[#0B0B0B] border border-[#262626] px-3 py-1 rounded-lg uppercase tracking-widest flex items-center gap-2"><Clock size={10} /> {ev.time}</span>
-                                <span className="text-[9px] font-black text-[#C0FF00] bg-[#C0FF00]/10 border border-[#C0FF00]/20 px-3 py-1 rounded-lg uppercase tracking-widest">Sunday Service</span>
                               </div>
                             </div>
                           </div>
