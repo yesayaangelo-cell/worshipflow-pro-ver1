@@ -29,7 +29,7 @@ import {
   getDoc
 } from "firebase/firestore";
 
-// CONFIG DARI LO (JANGAN DIUBAH)
+// CONFIG FIREBASE LO (JANGAN DIUBAH)
 const firebaseConfig = {
   apiKey: "AIzaSyDf73I2plTPUcvSB6FIMSAv6AWiHtz6RJ0",
   authDomain: "worship-flow-pro.firebaseapp.com",
@@ -45,17 +45,16 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
 
-// --- CONSTANTS & TYPES (Embedded biar aman) ---
+// --- CONSTANTS & TYPES ---
 const STANDARD_ROLES = ['Worship Leader', 'Singer', 'Keyboard', 'Guitar', 'Bass', 'Drums', 'Multimedia', 'Soundman'];
 const MEMBER_LIMIT = 50;
 const EVENT_LIMIT = 20;
 
-// Definisi Tipe Data
 interface Member { id: string; name: string; roles: string[]; phone: string; status: string; avatar: string; ownerId: string; }
 interface Event { id: string; name: string; date: string; time: string; category: string; ownerId: string; }
 interface Assignment { id: string; eventId: string; role: string; memberId: string; ownerId: string; }
 interface Song { id: string; eventId: string; title: string; key: string; notes: string; ownerId: string; }
-interface AdminProfile { churchName: string; adminName: string; password?: string; }
+interface AdminProfile { churchName: string; adminName: string; }
 type AppTab = 'dashboard' | 'schedule' | 'team';
 
 // --- COMPONENTS ---
@@ -127,14 +126,14 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, title, message }: any) => {
   );
 };
 
-// --- MAIN APP COMPONENT ---
+// --- MAIN APP ---
 
 export default function App() {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   // DATA STATE
-  const [profile, setProfile] = useState<AdminProfile>({ churchName: "My Church", adminName: "Director", password: "" });
+  const [profile, setProfile] = useState<AdminProfile>({ churchName: "My Church", adminName: "Director" });
   const [members, setMembers] = useState<Member[]>([]);
   const [events, setEvents] = useState<Event[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
@@ -166,13 +165,12 @@ export default function App() {
           if (profileSnap.exists()) {
             setProfile(profileSnap.data() as AdminProfile);
           } else {
-            // Create default profile
             const defaultProfile = { churchName: "My Church", adminName: currentUser.displayName || "Director" };
             await setDoc(doc(db, "profiles", currentUser.uid), defaultProfile);
             setProfile(defaultProfile);
           }
 
-          // Fetch Data Collections
+          // Fetch Data
           const qMembers = query(collection(db, "members"), where("ownerId", "==", currentUser.uid));
           const qEvents = query(collection(db, "events"), where("ownerId", "==", currentUser.uid));
           const qAssign = query(collection(db, "assignments"), where("ownerId", "==", currentUser.uid));
@@ -186,9 +184,7 @@ export default function App() {
           setEvents(eSnap.docs.map(d => ({ ...d.data(), id: d.id } as Event)));
           setAssignments(aSnap.docs.map(d => ({ ...d.data(), id: d.id } as Assignment)));
           setEventSongs(sSnap.docs.map(d => ({ ...d.data(), id: d.id } as Song)));
-        } catch (error) {
-          console.error("Error fetching data:", error);
-        }
+        } catch (error) { console.error("Error fetching data:", error); }
       }
       setLoading(false);
     });
@@ -210,7 +206,7 @@ export default function App() {
     setMembers([]); setEvents([]);
   };
 
-  // --- CRUD ACTIONS ---
+  // --- ACTIONS ---
 
   const handleEventSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -225,10 +221,8 @@ export default function App() {
   };
 
   const deleteEvent = async (id: string) => {
-    try {
-        await deleteDoc(doc(db, "events", id));
-        setEvents(prev => prev.filter(e => e.id !== id));
-    } catch (e) { console.error(e); }
+    try { await deleteDoc(doc(db, "events", id)); setEvents(prev => prev.filter(e => e.id !== id)); } 
+    catch (e) { console.error(e); }
   };
 
   const handleMemberSubmit = async (e: React.FormEvent) => {
@@ -268,7 +262,6 @@ export default function App() {
   };
 
   const handleUpdateSongNotes = async (songId: string, notes: string) => {
-      // Optimistic Update
       setEventSongs(prev => prev.map(s => s.id === songId ? { ...s, notes } : s));
       try { await updateDoc(doc(db, "songs", songId), { notes }); }
       catch (e) { console.error(e); }
@@ -329,7 +322,6 @@ export default function App() {
     navigator.clipboard.writeText(text).then(() => showToast("Copied to clipboard!"));
   };
 
-  // COMPUTED VALUES
   const sortedEvents = useMemo(() => [...events].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()), [events]);
   const filteredMembers = useMemo(() => searchQuery ? members.filter(m => m.name.toLowerCase().includes(searchQuery.toLowerCase())) : [], [members, searchQuery]);
   const filteredEvents = useMemo(() => searchQuery ? events.filter(e => e.name.toLowerCase().includes(searchQuery.toLowerCase())) : [], [events, searchQuery]);
@@ -337,7 +329,6 @@ export default function App() {
 
   if (loading) return <div className="min-h-screen bg-[#0B0B0B] flex items-center justify-center text-[#C0FF00] font-black uppercase tracking-widest">CONNECTING TO CLOUD...</div>;
 
-  // --- LOGIN SCREEN (Google Auth) ---
   if (!user) {
     return (
       <div className="min-h-screen bg-[#0B0B0B] flex flex-col items-center justify-center p-6 selection:bg-[#C0FF00] selection:text-black">
@@ -356,13 +347,11 @@ export default function App() {
     );
   }
 
-  // --- DASHBOARD (Sama persis UI lama, logic baru) ---
   return (
     <div className="flex h-screen bg-[#0B0B0B] text-[#FFFFFF] overflow-hidden selection:bg-[#C0FF00] selection:text-black">
       <Toast message={toast.message} show={toast.show} />
       <ConfirmModal isOpen={confirmState.isOpen} onClose={() => setConfirmState(p => ({...p, isOpen: false}))} onConfirm={() => { confirmState.onConfirm(); setConfirmState(p => ({...p, isOpen: false})); }} title={confirmState.title} message={confirmState.message} />
 
-      {/* Global Search */}
       {isSearchOpen && (
         <div className="fixed inset-0 z-[200] flex items-start justify-center p-4 pt-20">
           <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setIsSearchOpen(false)} />
@@ -428,8 +417,8 @@ export default function App() {
             <button onClick={() => { setFormData(profile); setModalType('edit_profile'); }} className="flex items-center gap-3 bg-[#1A1A1A] border border-[#262626] p-2 rounded-2xl hover:border-[#C0FF00] transition-all active:scale-95">
               <div className="w-10 h-10 rounded-xl bg-[#C0FF00] text-black flex items-center justify-center font-black text-xs">{adminInitials}</div>
               <div className="hidden sm:block text-left">
-                <p className="text-[10px] font-black text-white uppercase tracking-tight leading-tight">{profile.adminName}</p>
-                <p className="text-[8px] font-bold text-[#888888] uppercase tracking-widest leading-none mt-1">Director</p>
+                <p className="text-[10px] font-black text-white uppercase tracking-tight leading-tight">{profile.churchName}</p>
+                <p className="text-[8px] font-bold text-[#888888] uppercase tracking-widest leading-none mt-1">{profile.adminName}</p>
               </div>
             </button>
           </div>
@@ -719,12 +708,34 @@ export default function App() {
         )}
 
         {modalType === 'edit_profile' && (
-          <form onSubmit={(e) => { e.preventDefault(); setModalType(null); showToast("Profile settings are read-only in this demo."); }} className="space-y-6">
+          <form onSubmit={async (e) => { 
+            e.preventDefault(); 
+            if (!user) return;
+            try {
+              await setDoc(doc(db, "profiles", user.uid), profile, { merge: true });
+              setModalType(null); 
+              showToast("Settings updated");
+            } catch (err) { console.error(err); }
+          }} className="space-y-6">
             <div className="space-y-5">
-              <div><label className="block text-[10px] font-black text-[#888888] uppercase tracking-[0.3em] mb-3">Church Brand</label><div className="relative"><Church className="absolute left-6 top-1/2 -translate-y-1/2 text-[#333333]" size={18} /><input required type="text" className="w-full pl-14 pr-6 py-5 bg-[#0B0B0B] border border-[#262626] rounded-2xl text-white outline-none focus:border-[#C0FF00] font-bold transition-all" value={profile.churchName || ''} readOnly /></div></div>
-              <div><label className="block text-[10px] font-black text-[#888888] uppercase tracking-[0.3em] mb-3">Admin Name</label><div className="relative"><User className="absolute left-6 top-1/2 -translate-y-1/2 text-[#333333]" size={18} /><input required type="text" className="w-full pl-14 pr-6 py-5 bg-[#0B0B0B] border border-[#262626] rounded-2xl text-white outline-none focus:border-[#C0FF00] font-bold transition-all" value={profile.adminName || ''} readOnly /></div></div>
+              <div>
+                <label className="block text-[10px] font-black text-[#888888] uppercase tracking-[0.3em] mb-3">Church Brand</label>
+                <div className="relative">
+                  <Church className="absolute left-6 top-1/2 -translate-y-1/2 text-[#333333]" size={18} />
+                  <input required type="text" className="w-full pl-14 pr-6 py-5 bg-[#0B0B0B] border border-[#262626] rounded-2xl text-white outline-none focus:border-[#C0FF00] font-bold transition-all" value={profile.churchName || ''} onChange={(e) => setProfile({...profile, churchName: e.target.value})} />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-[#888888] uppercase tracking-[0.3em] mb-3">Admin Name</label>
+                <div className="relative">
+                  <User className="absolute left-6 top-1/2 -translate-y-1/2 text-[#333333]" size={18} />
+                  <input required type="text" className="w-full pl-14 pr-6 py-5 bg-[#0B0B0B] border border-[#262626] rounded-2xl text-white outline-none focus:border-[#C0FF00] font-bold transition-all" value={profile.adminName || ''} onChange={(e) => setProfile({...profile, adminName: e.target.value})} />
+                </div>
+              </div>
             </div>
-            <div className="pt-4 space-y-3"><button type="submit" className="w-full bg-[#C0FF00] text-black font-black py-5 rounded-2xl uppercase tracking-widest text-xs neon-glow shadow-lg transition-all active:scale-95">Close Settings</button></div>
+            <div className="pt-4 space-y-3">
+              <button type="submit" className="w-full bg-[#C0FF00] text-black font-black py-5 rounded-2xl uppercase tracking-widest text-xs neon-glow shadow-lg transition-all active:scale-95">Save Changes</button>
+            </div>
           </form>
         )}
       </Modal>
