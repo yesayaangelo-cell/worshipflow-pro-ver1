@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
   LayoutDashboard, Calendar, Users, Search, Clock, LogOut, Plus, X, Trash2, Edit3, 
   UserPlus, ListMusic, Lock, PanelLeftClose, PanelLeftOpen, AlertTriangle, Share2, 
-  Check, User, Music, Church, KeyRound, Phone, Heart, Copy
+  Check, User, Music, Church, KeyRound, Phone, Heart, Copy, ExternalLink
 } from 'lucide-react';
 
 // --- FIREBASE INTEGRATION ---
@@ -392,7 +392,7 @@ export default function App() {
           {isSidebarOpen ? (
             <div className="bg-[#262626] p-4 rounded-3xl border border-[#333333]">
                <div className="flex items-center gap-2 mb-2"><Heart size={14} className="text-[#C0FF00]" fill="currentColor" /><p className="text-[10px] font-black uppercase text-white tracking-widest">Support Us</p></div>
-               <button onClick={() => setModalType('donate')} className="w-full bg-[#C0FF00] text-black py-2 rounded-xl text-[9px] font-black uppercase tracking-widest hover:scale-105 transition-transform">Donate</button>
+               <button onClick={() => setModalType('donate')} className="w-full bg-[#C0FF00] text-black py-2 rounded-xl text-[9px] font-black uppercase tracking-widest hover:scale-105 transition-transform">Support</button>
             </div>
           ) : (
             <button onClick={() => setModalType('donate')} className="w-full flex justify-center p-3 text-[#C0FF00] hover:bg-[#262626] rounded-2xl transition-all"><Heart size={20} fill="currentColor" /></button>
@@ -701,10 +701,11 @@ export default function App() {
           <div className="text-center space-y-8 py-4">
             <div className="relative inline-block"><div className="absolute inset-0 bg-[#C0FF00] blur-xl opacity-20 animate-pulse rounded-full"></div><Heart size={48} className="text-[#C0FF00] relative z-10 mx-auto" fill="currentColor" /></div>
             <div><h4 className="text-2xl font-black text-white uppercase mb-2 tracking-tight">Support Flow</h4><p className="text-[#888888] text-sm font-medium tracking-tight">Empowering digital worship tech worldwide.</p></div>
-            <div className="bg-[#0B0B0B] p-8 rounded-[2rem] border border-[#C0FF00]/20 space-y-6 shadow-xl">
-              <div><p className="text-[10px] font-black text-[#888888] uppercase tracking-[0.4em] mb-4">BCA TRANSFER</p><div className="flex items-center justify-between bg-[#1A1A1A] px-6 py-5 rounded-2xl border border-[#262626] group hover:border-[#C0FF00]/50 transition-all"><span className="text-xl sm:text-2xl font-black text-[#C0FF00] tracking-[0.2em]">8800487863</span><button onClick={() => { navigator.clipboard.writeText('8800487863'); showToast("Account number copied!"); }} className="text-[#888888] hover:text-[#C0FF00] transition-colors"><Copy size={18} /></button></div></div>
-              <p className="text-[11px] font-black text-white uppercase tracking-[0.2em]">A.N. YESAYA ANGELO</p>
-            </div>
+            
+            <button onClick={() => window.open('https://sociabuzz.com/ecpcorp/tribe', '_blank')} className="w-full bg-[#C0FF00] text-black py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg hover:scale-105 transition-transform flex items-center justify-center gap-2">
+               <Heart size={16} fill="black" /> Support via SociaBuzz
+            </button>
+
             <button onClick={() => setModalType(null)} className="w-full bg-[#262626] text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg">Done</button>
           </div>
         )}
