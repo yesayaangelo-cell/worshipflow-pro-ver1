@@ -29,7 +29,7 @@ import {
   getDoc
 } from "firebase/firestore";
 
-// CONFIG FIREBASE LO (JANGAN DIUBAH)
+// CONFIG FIREBASE LO
 const firebaseConfig = {
   apiKey: "AIzaSyDf73I2plTPUcvSB6FIMSAv6AWiHtz6RJ0",
   authDomain: "worship-flow-pro.firebaseapp.com",
@@ -296,6 +296,8 @@ export default function App() {
     const team = assignments.filter(a => a.eventId === event.id);
     const songs = eventSongs.filter(s => s.eventId === event.id);
     const dateStr = new Date(event.date).toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long' });
+    
+    // 1. Susun Pesan
     let text = `🗓️ *WORSHIP SCHEDULE*\n*${event.name}*\n📅 ${dateStr} • ⏰ ${event.time}\n\n🎵 *SETLIST:*\n`;
     songs.forEach((s, idx) => { text += `${idx + 1}. ${s.title} (${s.key})\n`; });
     text += `\n🎸 *TEAM:*\n`;
@@ -303,12 +305,10 @@ export default function App() {
       const member = members.find(m => m.id === a.memberId);
       text += `• ${a.role}: ${member ? member.name : '-'}\n`;
     });
-    
-    if (navigator.share) {
-       navigator.share({ title: event.name, text }).catch(console.error);
-    } else {
-       navigator.clipboard.writeText(text).then(() => showToast("Copied to clipboard!"));
-    }
+
+    // 2. Encode & Open WA Direct Link
+    const encodedText = encodeURIComponent(text);
+    window.open(`https://wa.me/?text=${encodedText}`, '_blank');
   };
 
   const handleShareAllSchedules = () => {
@@ -319,7 +319,10 @@ export default function App() {
         const songs = eventSongs.filter(s => s.eventId === ev.id);
         text += `*${ev.name}*\n📅 ${new Date(ev.date).toLocaleDateString()} • ${ev.time}\n🎵 Setlist: ${songs.length} songs\n🎸 Team: ${team.length} assigned\n\n`;
     });
-    navigator.clipboard.writeText(text).then(() => showToast("Copied to clipboard!"));
+    
+    // Encode & Open WA Direct Link
+    const encodedText = encodeURIComponent(text);
+    window.open(`https://wa.me/?text=${encodedText}`, '_blank');
   };
 
   const sortedEvents = useMemo(() => [...events].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()), [events]);
@@ -624,7 +627,7 @@ export default function App() {
                           <p className="text-[10px] text-[#C0FF00] font-black uppercase tracking-[0.2em] mt-2">Key of {s.key}</p>
                         </div>
                       </div>
-                      <button onClick={() => deleteSong(s.id)} className="p-3 text-[#333333] hover:text-red-500 hover:bg-red-500/10 rounded-2xl transition-all border border-transparent hover:border-red-500/20"><Trash2 size={20} /></button>
+                      <button onClick={() => setConfirmState({ isOpen: true, title: 'Remove Song?', message: `Remove "${s.title}" from setlist?`, onConfirm: () => deleteSong(s.id) })} className="p-3 text-[#333333] hover:text-red-500 hover:bg-red-500/10 rounded-2xl transition-all border border-transparent hover:border-red-500/20"><Trash2 size={20} /></button>
                     </div>
                     <input type="text" placeholder="Add performance notes..." className="w-full px-6 py-4 bg-[#1A1A1A] border border-[#262626] rounded-[1.5rem] text-[11px] font-medium text-[#888888] outline-none focus:border-[#C0FF00] focus:text-white placeholder:text-[#333333] transition-all" value={s.notes || ''} onChange={(e) => handleUpdateSongNotes(s.id, e.target.value)} />
                   </div>
