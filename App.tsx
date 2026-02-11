@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
   LayoutDashboard, Calendar, Users, Search, Clock, LogOut, Plus, X, Trash2, Edit3, 
   UserPlus, ListMusic, Lock, PanelLeftClose, PanelLeftOpen, AlertTriangle, Share2, 
-  Check, User, Music, Church, KeyRound, Phone, Heart, Copy, ExternalLink
+  Check, User, Music, Church, KeyRound, Phone, Heart, Copy, ExternalLink, Mic2
 } from 'lucide-react';
 
 // --- FIREBASE INTEGRATION ---
@@ -149,6 +149,7 @@ export default function App() {
   const [toast, setToast] = useState({ show: false, message: '' });
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [customRoleInput, setCustomRoleInput] = useState('');
   
   // FORM STATE
   const [formData, setFormData] = useState<any>({});
@@ -323,6 +324,15 @@ export default function App() {
     // Encode & Open WA Direct Link
     const encodedText = encodeURIComponent(text);
     window.open(`https://wa.me/?text=${encodedText}`, '_blank');
+  };
+
+  const addCustomRole = () => {
+      if(!customRoleInput) return;
+      const current = formData.roles || [];
+      if(!current.includes(customRoleInput)) {
+          setFormData({...formData, roles: [...current, customRoleInput]});
+      }
+      setCustomRoleInput('');
   };
 
   const sortedEvents = useMemo(() => [...events].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()), [events]);
@@ -651,13 +661,24 @@ export default function App() {
               </div>
               <div>
                 <label className="block text-[10px] font-black text-[#888888] uppercase tracking-[0.3em] mb-3">Roles</label>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
                   {STANDARD_ROLES.map(role => (
                     <button key={role} type="button" onClick={() => {
                       const current = formData.roles || [];
                       setFormData({...formData, roles: current.includes(role) ? current.filter((r: string) => r !== role) : [...current, role]});
                     }} className={`px-2 py-3 rounded-xl text-[8px] font-black transition-all border uppercase tracking-widest ${formData.roles?.includes(role) ? 'bg-[#C0FF00] border-[#C0FF00] text-black shadow-[0_0_10px_rgba(192,255,0,0.2)]' : 'bg-[#0B0B0B] border-[#262626] text-[#888888]'}`}>{role}</button>
                   ))}
+                  {/* Dynamic Custom Roles Display */}
+                  {formData.roles?.filter((r: string) => !STANDARD_ROLES.includes(r)).map((role: string) => (
+                     <button key={role} type="button" onClick={() => {
+                      const current = formData.roles || [];
+                      setFormData({...formData, roles: current.filter((r: string) => r !== role)});
+                    }} className="px-2 py-3 rounded-xl text-[8px] font-black transition-all border uppercase tracking-widest bg-[#C0FF00] border-[#C0FF00] text-black shadow-[0_0_10px_rgba(192,255,0,0.2)]">{role}</button>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                    <input type="text" placeholder="Custom Role (e.g. Guitar 2)..." className="flex-1 px-4 py-3 bg-[#1A1A1A] border border-[#262626] rounded-xl text-xs font-bold text-white outline-none focus:border-[#C0FF00] transition-all" value={customRoleInput} onChange={(e) => setCustomRoleInput(e.target.value)} onKeyDown={(e) => { if(e.key === 'Enter') { e.preventDefault(); addCustomRole(); } }} />
+                    <button type="button" onClick={addCustomRole} className="bg-[#262626] hover:bg-[#C0FF00] hover:text-black text-white px-4 rounded-xl transition-all"><Plus size={18} /></button>
                 </div>
               </div>
               <div>
@@ -674,16 +695,25 @@ export default function App() {
             <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-1 custom-scrollbar px-1">
               {(() => {
                 const assignedMemberIds = assignments.filter(a => a.eventId === selectedEventId).map(a => a.memberId);
-                return STANDARD_ROLES.map(role => {
+                // COMBINE STANDARD ROLES WITH ANY CUSTOM ROLES FOUND IN MEMBERS
+                const allCustomRoles = members.flatMap(m => m.roles).filter(r => !STANDARD_ROLES.includes(r));
+                const uniqueRoles = Array.from(new Set([...STANDARD_ROLES, ...allCustomRoles]));
+
+                return uniqueRoles.map(role => {
                   const currentAssignment = assignments.find(a => a.eventId === selectedEventId && a.role === role);
-                  const availableMembers = members.filter(m => !assignedMemberIds.includes(m.id) || m.id === currentAssignment?.memberId);
+                  // Filter members who HAVE this specific role
+                  const availableMembers = members.filter(m => (m.roles.includes(role)) && (!assignedMemberIds.includes(m.id) || m.id === currentAssignment?.memberId));
+                  
+                  // Only show the row if it's a standard role OR if there are actually members with this custom role
+                  if (!STANDARD_ROLES.includes(role) && availableMembers.length === 0 && !currentAssignment) return null;
+
                   return (
                     <div key={role} className="flex items-center justify-between p-6 bg-[#0B0B0B] rounded-2xl border border-[#262626] group hover:border-[#C0FF00]/20 transition-all shadow-md">
                       <div className="flex-1">
                         <p className="text-[8px] font-black text-[#888888] uppercase tracking-[0.3em] mb-1">{role}</p>
                         <p className="font-black text-white text-sm uppercase truncate tracking-tight">{currentAssignment ? members.find(m => m.id === currentAssignment.memberId)?.name : <span className="text-[#333333]">VACANT</span>}</p>
                       </div>
-                      <select className="bg-[#1A1A1A] text-[#C0FF00] border border-[#262626] rounded-xl px-4 py-2 text-[10px] font-black outline-none focus:border-[#C0FF00] cursor-pointer" value={currentAssignment?.memberId || ''} onChange={(e) => handleAssignMember(role, e.target.value)}>
+                      <select className="bg-[#1A1A1A] text-[#C0FF00] border border-[#262626] rounded-xl px-4 py-2 text-[10px] font-black outline-none focus:border-[#C0FF00] cursor-pointer max-w-[50%]" value={currentAssignment?.memberId || ''} onChange={(e) => handleAssignMember(role, e.target.value)}>
                         <option value="">- SELECT -</option>
                         {availableMembers.map(m => <option key={m.id} value={m.id}>{m.name.toUpperCase()}</option>)}
                       </select>
